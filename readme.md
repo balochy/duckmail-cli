@@ -2,8 +2,26 @@
 ### A simple bash script to manage your duckduckgo email forwarding functions.
 ***
 ### Installation
+
+**One-liner installation (recommended):**
+```bash
+eval "$(curl -fsSL https://raw.githubusercontent.com/balochy/duckmail-cli/main/install/installer.sh)"
 ```
+
+This will:
+- Download and install duckmail to `~/.duckmail/bin/duckmail`
+- Automatically add it to your PATH
+
+**Alternative - Direct eval (temporary, current session only):**
+```bash
 eval "$(curl -fsSL https://raw.githubusercontent.com/balochy/duckmail-cli/main/duckmail)"
+```
+
+**Manual installation:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/balochy/duckmail-cli/main/duckmail -o ~/.local/bin/duckmail
+chmod +x ~/.local/bin/duckmail
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
 ### How to get the API key (Token):
@@ -23,4 +41,19 @@ duckmail --help
 to see the functions that are available.
 
 ## Dependencies
-`curl` to do the Api calls.
+- `curl` or `wget` for installation and API calls
+- `jq` for JSON parsing
+- `bash` shell
+
+## Features
+✓ One-liner installation with automatic PATH setup  
+✓ Works offline after first installation  
+✓ Automatic shell detection (bash/zsh)  
+✓ Installation logging  
+✓ Available immediately after installation  
+
+## Uninstallation
+```bash
+rm -rf ~/.duckmail
+# Remove the PATH export line from your ~/.bashrc or ~/.zshrc
+```

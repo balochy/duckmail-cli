@@ -1,0 +1,154 @@
+#!/bin/bash
+
+# DuckDuckGo Email Alias Manager - Installation Script
+# Usage: eval "$(curl -fsSL https://raw.githubusercontent.com/balochy/duckmail-cli/main/install/installer.sh)"
+
+{
+    # Logging function
+    ___duckmail_log() {
+        printf "[%s] %s\n" "$(command date +"%Y-%m-%d/%H:%M:%S")" "$1" | command tee -a "$___DUCKMAIL_ROOT/install.log" >&2
+    }
+
+    # Download the main script
+    ___duckmail_download() {
+        local target="$1"
+        local url="https://raw.githubusercontent.com/balochy/duckmail-cli/main/duckmail"
+
+        ___duckmail_log "Downloading duckmail from $url"
+
+        if command -v curl >/dev/null 2>&1; then
+            command curl -fsSL "$url" > "$target" 2>/dev/null || {
+                ___duckmail_log "Failed to download using curl"
+                return 1
+            }
+        elif command -v wget >/dev/null 2>&1; then
+            command wget -qO "$target" "$url" 2>/dev/null || {
+                ___duckmail_log "Failed to download using wget"
+                return 1
+            }
+        else
+            ___duckmail_log "Error: Neither curl nor wget is available"
+            return 1
+        fi
+
+        ___duckmail_log "Download SUCCESS: $target (size: $(command wc -c "$target" 2>/dev/null | command awk '{print $1}') bytes)"
+        return 0
+    }
+
+    # Install the script
+    ___duckmail_install() {
+        local install_root="${DUCKMAIL_ROOT:-$HOME/.duckmail}"
+        local install_bin="$install_root/bin"
+        local install_path="$install_bin/duckmail"
+
+        ___DUCKMAIL_ROOT="$install_root"
+
+        # Create directories
+        command mkdir -p "$install_bin" || {
+            ___duckmail_log "Failed to create directory: $install_bin"
+            return 1
+        }
+
+        command mkdir -p "$install_root" || {
+            ___duckmail_log "Failed to create directory: $install_root"
+            return 1
+        }
+
+        ___duckmail_log "Installing duckmail to $install_path"
+
+        # Download the script
+        local temp_file="$install_root/duckmail.tmp.$$"
+        ___duckmail_download "$temp_file" || {
+            command rm -f "$temp_file"
+            return 1
+        }
+
+        # Move to final location
+        command mv "$temp_file" "$install_path" || {
+            ___duckmail_log "Failed to move script to $install_path"
+            command rm -f "$temp_file"
+            return 1
+        }
+
+        # Make executable
+        command chmod +x "$install_path" || {
+            ___duckmail_log "Failed to make script executable"
+            return 1
+        }
+
+        ___duckmail_log "Installation successful!"
+
+        # Check if already in PATH
+        if command -v duckmail >/dev/null 2>&1; then
+            ___duckmail_log "✓ duckmail is already available in PATH"
+            return 0
+        fi
+
+        # Setup PATH
+        ___duckmail_setup_path "$install_bin"
+    }
+
+    # Setup PATH in shell RC files
+    ___duckmail_setup_path() {
+        local bin_dir="$1"
+        local shell_rc=""
+
+        # Detect shell and RC file
+        if [ -n "$ZSH_VERSION" ]; then
+            shell_rc="$HOME/.zshrc"
+        elif [ -n "$BASH_VERSION" ]; then
+            shell_rc="$HOME/.bashrc"
+        else
+            shell_rc="$HOME/.profile"
+        fi
+
+        # Check if PATH export already exists
+        if [ -f "$shell_rc" ] && grep -q "DUCKMAIL" "$shell_rc" 2>/dev/null; then
+            ___duckmail_log "PATH already configured in $shell_rc"
+        else
+            ___duckmail_log "Adding $bin_dir to PATH in $shell_rc"
+
+            cat >> "$shell_rc" << 'EOF'
+
+# DuckDuckGo Email Alias Manager
+export PATH="$HOME/.duckmail/bin:$PATH"
+EOF
+            ___duckmail_log "✓ PATH updated in $shell_rc"
+        fi
+
+        # Add to current session PATH
+        export PATH="$bin_dir:$PATH"
+
+        # Define function for current session
+        duckmail() {
+            "$bin_dir/duckmail" "$@"
+        }
+
+        ___duckmail_log ""
+        ___duckmail_log "╔════════════════════════════════════════════════════════╗"
+        ___duckmail_log "║  DuckMail installed successfully!                     ║"
+        ___duckmail_log "╚════════════════════════════════════════════════════════╝"
+        ___duckmail_log ""
+        ___duckmail_log "Available now in current session!"
+        ___duckmail_log "For new sessions, restart your terminal or run:"
+        ___duckmail_log "  source $shell_rc"
+        ___duckmail_log ""
+        ___duckmail_log "Quick start:"
+        ___duckmail_log "  1. Set your token: duckmail -t YOUR_TOKEN"
+        ___duckmail_log "  2. Generate alias: duckmail -g"
+        ___duckmail_log "  3. Get help: duckmail -h"
+        ___duckmail_log ""
+        ___duckmail_log "Installation log: $___DUCKMAIL_ROOT/install.log"
+    }
+
+    # Main installation function
+    ___duckmail_main() {
+        ___duckmail_install || {
+            echo "Installation failed. Check the log for details." >&2
+            return 1
+        }
+    }
+
+    # Run the installer
+    ___duckmail_main
+}

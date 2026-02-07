@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# DuckDuckGo Email Alias Manager
+# Main installation and runtime script
+
 duckmail() {
     usage() {
         echo "Usage: duckmail [options...]"
@@ -7,7 +10,7 @@ duckmail() {
         echo " -g, --generate                             Generate a new alias"
         echo " -t, --token <token>                        Set the DuckDuckGo API token"
         echo " -h, --help                                 Show this help message"
-        echo "to get the Token please visit the projects github page: https://github.com/balochy/duckmail-cli"
+        echo "To get the Token please visit: https://github.com/balochy/duckmail-cli"
         return 0
     }
 
@@ -72,9 +75,14 @@ duckmail() {
             usage
             ;;
         *)
-            echo "Error: Unknown option '$1'"
-            echo "Use 'duckmail -h' for help."
-            return 1
+            if [ -n "$1" ]; then
+                echo "Error: Unknown option '$1'"
+                echo "Use 'duckmail -h' for help."
+                return 1
+            else
+                usage
+                return 1
+            fi
             ;;
     esac
 }
