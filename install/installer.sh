@@ -121,7 +121,7 @@ EOF
 
         # Define function for current session
         duckmail() {
-            "$bin_dir/duckmail" "$@"
+            "$HOME/.duckmail/bin/duckmail" "$@"
         }
 
         ___duckmail_log ""
