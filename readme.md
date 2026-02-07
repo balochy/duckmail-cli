@@ -15,3 +15,6 @@ after that you no longer need the extension or browser, you can do everything wi
 duckmail --help
 ```
 to see the commands available.
+
+## Dependencies
+`Curl` to do the Api calls.

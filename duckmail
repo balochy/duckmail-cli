@@ -6,7 +6,7 @@ usage() {
     echo " -g, --generate                             Generate a new alias"
     echo " -t, --token <token>                        Set the DuckDuckGo API token"
     echo " -h, --help                                 Show this help message"
-    echo "to setup the Token follow this guide: "
+    echo "to get the Token please visit the projects github page: https://github.com/balochy/duckmail-cli"
     exit 0
 }
 
