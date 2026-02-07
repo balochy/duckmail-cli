@@ -7,7 +7,7 @@ usage() {
     echo " -t, --token <token>                        Set the DuckDuckGo API token"
     echo " -h, --help                                 Show this help message"
     echo "to get the Token please visit the projects github page: https://github.com/balochy/duckmail-cli"
-    exit 0
+    return 0
 }
 
 TOKEN_FILE="$HOME/.duckmail_token"
@@ -34,7 +34,7 @@ handle_send_from_relay() {
 handle_generate() {
     if [ ! -f "$TOKEN_FILE" ]; then
         echo "Error: No token set. Use 'duckmail --token <token>' to set your token."
-        exit 1
+        return 1
     fi
     TOKEN=$(cat "$TOKEN_FILE")
     RESPONSE=$(curl -s -X POST https://quack.duckduckgo.com/api/email/addresses \
@@ -50,7 +50,7 @@ handle_generate() {
 handle_token() {
     if [ "$#" -ne 2 ]; then
         echo "Error: Missing token value. Usage: duckmail --token <token>"
-        exit 1
+        return 1
     fi
     echo "$2" > "$TOKEN_FILE"
     echo "Token saved successfully."
@@ -72,6 +72,6 @@ case "$1" in
     *)
         echo "Error: Unknown option '$1'"
         echo "Use 'duckmail -h' for help."
-        exit 1
+        return 1
         ;;
 esac
