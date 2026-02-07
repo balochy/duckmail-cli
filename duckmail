@@ -1,77 +1,85 @@
 #!/bin/bash
 
-usage() {
-    echo "Usage: duckmail [options...]"
-    echo " -s, --send-from-relay <recipient> <alias>  Prints an email to send mails from the alias"
-    echo " -g, --generate                             Generate a new alias"
-    echo " -t, --token <token>                        Set the DuckDuckGo API token"
-    echo " -h, --help                                 Show this help message"
-    echo "to get the Token please visit the projects github page: https://github.com/balochy/duckmail-cli"
-    return 0
+duckmail() {
+    usage() {
+        echo "Usage: duckmail [options...]"
+        echo " -s, --send-from-relay <recipient> <alias>  Prints an email to send mails from the alias"
+        echo " -g, --generate                             Generate a new alias"
+        echo " -t, --token <token>                        Set the DuckDuckGo API token"
+        echo " -h, --help                                 Show this help message"
+        echo "to get the Token please visit the projects github page: https://github.com/balochy/duckmail-cli"
+        return 0
+    }
+
+    TOKEN_FILE="$HOME/.duckmail_token"
+
+    handle_send_from_relay() {
+        if [ "$#" -ne 3 ]; then
+            usage
+            return 1
+        fi
+
+        recipient_email="$2"
+        your_alias="$3"
+
+        recipient_user=$(echo "$recipient_email" | cut -d'@' -f1)
+        recipient_domain=$(echo "$recipient_email" | cut -d'@' -f2)
+
+        if [[ "$your_alias" != *@duck.com ]]; then
+            your_alias="${your_alias}@duck.com"
+        fi
+
+        formatted_email="${recipient_user}_at_${recipient_domain}_${your_alias}"
+        echo "$formatted_email"
+    }
+
+    handle_generate() {
+        if [ ! -f "$TOKEN_FILE" ]; then
+            echo "Error: No token set. Use 'duckmail --token <token>' to set your token."
+            return 1
+        fi
+        TOKEN=$(cat "$TOKEN_FILE")
+        RESPONSE=$(curl -s -X POST https://quack.duckduckgo.com/api/email/addresses \
+            -H "Authorization: Bearer $TOKEN")
+        ADDRESS=$(echo "$RESPONSE" | jq -r '.address')
+        if [ "$ADDRESS" != "null" ]; then
+            echo "${ADDRESS}@duck.com"
+        else
+            echo "Error: Failed to generate alias. Check your token or try again."
+        fi
+    }
+
+    handle_token() {
+        if [ "$#" -ne 2 ]; then
+            echo "Error: Missing token value. Usage: duckmail --token <token>"
+            return 1
+        fi
+        echo "$2" > "$TOKEN_FILE"
+        echo "Token saved successfully."
+    }
+
+    case "$1" in
+        --send-from-relay|-s)
+            handle_send_from_relay "$@"
+            ;;
+        --generate|-g)
+            handle_generate
+            ;;
+        --token|-t)
+            handle_token "$@"
+            ;;
+        -h|--help)
+            usage
+            ;;
+        *)
+            echo "Error: Unknown option '$1'"
+            echo "Use 'duckmail -h' for help."
+            return 1
+            ;;
+    esac
 }
 
-TOKEN_FILE="$HOME/.duckmail_token"
-
-handle_send_from_relay() {
-    if [ "$#" -ne 3 ]; then
-        usage
-    fi
-
-    recipient_email="$2"
-    your_alias="$3"
-
-    recipient_user=$(echo "$recipient_email" | cut -d'@' -f1)
-    recipient_domain=$(echo "$recipient_email" | cut -d'@' -f2)
-
-    if [[ "$your_alias" != *@duck.com ]]; then
-        your_alias="${your_alias}@duck.com"
-    fi
-
-    formatted_email="${recipient_user}_at_${recipient_domain}_${your_alias}"
-    echo "$formatted_email"
-}
-
-handle_generate() {
-    if [ ! -f "$TOKEN_FILE" ]; then
-        echo "Error: No token set. Use 'duckmail --token <token>' to set your token."
-        return 1
-    fi
-    TOKEN=$(cat "$TOKEN_FILE")
-    RESPONSE=$(curl -s -X POST https://quack.duckduckgo.com/api/email/addresses \
-        -H "Authorization: Bearer $TOKEN")
-    ADDRESS=$(echo "$RESPONSE" | jq -r '.address')
-    if [ "$ADDRESS" != "null" ]; then
-        echo "${ADDRESS}@duck.com"
-    else
-        echo "Error: Failed to generate alias. Check your token or try again."
-    fi
-}
-
-handle_token() {
-    if [ "$#" -ne 2 ]; then
-        echo "Error: Missing token value. Usage: duckmail --token <token>"
-        return 1
-    fi
-    echo "$2" > "$TOKEN_FILE"
-    echo "Token saved successfully."
-}
-
-case "$1" in
-    --send-from-relay|-s)
-        handle_send_from_relay "$@"
-        ;;
-    --generate|-g)
-        handle_generate
-        ;;
-    --token|-t)
-        handle_token "$@"
-        ;;
-    -h|--help)
-        usage
-        ;;
-    *)
-        echo "Error: Unknown option '$1'"
-        echo "Use 'duckmail -h' for help."
-        return 1
-        ;;
-esac
+# If script is executed directly (not eval'd), run the function
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    duckmail "$@"
+fi
